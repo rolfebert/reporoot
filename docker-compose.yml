@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=mysql://root:NewRoot123!@db:3306/buttons_db
+      - NODE_ENV=production
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET:-devsecret}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-devrefresh}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mariadb:12.1
+    environment:
+      - MYSQL_ROOT_PASSWORD=NewRoot123!
+      - MYSQL_DATABASE=buttons_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  mariadb_data:

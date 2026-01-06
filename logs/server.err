@@ -1,0 +1,8 @@
+Failed to start server PrismaClientInitializationError: Authentication failed against database server at `localhost`, the provided database credentials for `root` are not valid.
+
+Please make sure to provide valid database credentials for the database server at `localhost`.
+    at t (G:\reporoot\node_modules\@prisma\client\runtime\library.js:112:2488)
+    at async start (G:\reporoot\dist\index.js:13:9) {
+  clientVersion: '5.22.0',
+  errorCode: 'P1000'
+}

@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buttons Database</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .auth-section { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+    input, textarea { padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+    button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap; font-size: 14px; }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+    .item-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
+    .item-card h3 { margin: 0 0 10px 0; font-size: 16px; }
+    .button-details { font-size: 13px; line-height: 1.4; }
+    .button-details div { margin: 4px 0; }
+    .item-images { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .item-images img { border-radius: 4px; cursor: pointer; border: 1px solid #ddd; }
+    @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .item-card { padding: 12px; } }
+    .item-images { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+    .item-images img { width: calc(50% - 5px); height: 200px; object-fit: cover; border-radius: 4px; cursor: pointer; }
+    .item-images img:only-child { width: 100%; }
+    .create-form { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .form-grid > div { display: flex; flex-direction: column; }
+    .form-grid label { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 3px; }
+    .form-grid input, .form-grid textarea { width: 100%; padding: 8px; font-size: 14px; box-sizing: border-box; }
+    .form-full { grid-column: 1 / -1; }
+    .create-form textarea { width: 100%; min-height: 80px; resize: vertical; }
+    .hidden { display: none !important; }
+    .error { color: #dc3545; margin-top: 10px; padding: 10px; background: #f8d7da; border-radius: 4px; }
+    .success { color: #28a745; margin-top: 10px; padding: 10px; background: #d4edda; border-radius: 4px; }
+    .delete-btn { background: #dc3545; }
+    .delete-btn:hover { background: #c82333; }
+    .button-details { margin-top: 10px; font-size: 13px; color: #666; }
+    .button-details div { margin: 3px 0; }
+    .button-details strong { color: #333; }
+    .analyzing { color: #007bff; font-weight: bold; margin-top: 10px; padding: 10px; background: #cfe2ff; border-radius: 4px; display: flex; align-items: center; gap: 10px; }
+    .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #007bff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .image-preview { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .image-preview-item { position: relative; width: 120px; height: 120px; }
+    .image-preview-item img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 2px solid #ddd; }
+    .image-preview-item .remove { position: absolute; top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px; line-height: 20px; }
+    .loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+    .loading-box { background: white; padding: 30px; border-radius: 8px; text-align: center; }
+    .loading-box .spinner { margin: 0 auto 15px; width: 40px; height: 40px; border-width: 4px; }
+  </style>
+</head>
+<body>
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loading-box">
+      <div class="spinner"></div>
+      <p id="loadingText">Processing...</p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <h1>🎨 Buttons Database</h1>
+      <div id="authSection" class="auth-section">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <button type="button" onclick="togglePwd()">👁️</button>
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" class="hidden">
+        <button onclick="doLogin()">Login</button>
+        <button id="regBtn" onclick="showReg()">Register</button>
+      </div>
+      <div id="loggedInSection" class="hidden">
+        <p>Logged in as: <span id="userEmail"></span></p>
+        <button onclick="doLogout()">Logout</button>
+        <button onclick="clearUploadsFolder()" style="background: #dc3545; margin-left: 10px;">🗑️ Clear Uploads</button>
+        <button onclick="toggleSearch()" style="background: #17a2b8; margin-left: 10px;">🔍 Search</button>
+      </div>
+      <div id="message"></div>
+    </div>
+
+    <div id="createSection" class="create-form hidden">
+      <h2>Add New Button</h2>
+      <div style="margin-bottom: 15px;">
+        <input type="file" id="imageFiles" accept="image/*" multiple onchange="handleImageSelect()">
+        <p style="font-size: 12px; color: #666; margin-top: 5px;">📸 Upload front and back images (or multiple views)</p>
+        <div id="imagePreview" class="image-preview"></div>
+        <div id="analyzingMsg" class="analyzing hidden">
+          <div class="spinner"></div>
+          <span id="analyzeText">Analyzing images with AI...</span>
+        </div>
+      </div>
+      
+      <div class="form-grid">
+        <div class="form-full">
+          <label>Button Name/Title *</label>
+          <input type="text" id="title" placeholder="Button Name/Title *">
+        </div>
+        <div>
+          <label>Material</label>
+          <input type="text" id="material" placeholder="Material">
+        </div>
+        <div>
+          <label>Color</label>
+          <input type="text" id="color" placeholder="Color">
+        </div>
+        <div>
+          <label>Size</label>
+          <input type="text" id="size" placeholder="Size">
+        </div>
+        <div>
+          <label>Diameter</label>
+          <input type="text" id="diameter" placeholder="Diameter">
+        </div>
+        <div>
+          <label>Holes</label>
+          <input type="number" id="holes" placeholder="Holes" min="0">
+        </div>
+        <div>
+          <label>Style</label>
+          <input type="text" id="style" placeholder="Style">
+        </div>
+        <div>
+          <label>NBS Code</label>
+          <input type="text" id="nbsCode" placeholder="NBS Code">
+        </div>
+        <div>
+          <label>Division (I, III, IX)</label>
+          <input type="text" id="division" placeholder="Division">
+        </div>
+        <div>
+          <label>Section (1-27)</label>
+          <input type="number" id="section" placeholder="Section" min="1" max="27">
+        </div>
+        <div>
+          <label>Section Name</label>
+          <input type="text" id="sectionName" placeholder="Section Name">
+        </div>
+        <div>
+          <label>Age/Period</label>
+          <input type="text" id="age" placeholder="Age/Period">
+        </div>
+        <div>
+          <label>Back Type</label>
+          <input type="text" id="backType" placeholder="Back Type">
+        </div>
+        <div>
+          <label>Pictorial Subject</label>
+          <input type="text" id="pictorialSubject" placeholder="Pictorial Subject">
+        </div>
+        <div>
+          <label>Pattern</label>
+          <input type="text" id="pattern" placeholder="Pattern">
+        </div>
+        <div>
+          <label>Usage Type</label>
+          <input type="text" id="usageType" placeholder="Usage Type">
+        </div>
+        <div>
+          <label>Condition</label>
+          <input type="text" id="buttonCondition" placeholder="Condition">
+        </div>
+        <div>
+          <label>Manufacturer</label>
+          <input type="text" id="manufacturer" placeholder="Manufacturer">
+        </div>
+        <div class="form-full">
+          <label>Description</label>
+          <textarea id="content" placeholder="Description"></textarea>
+        </div>
+        <div class="form-full">
+          <label>Notes</label>
+          <textarea id="notes" placeholder="Notes"></textarea>
+        </div>
+      </div>
+      <button id="createBtn" onclick="createItem()" style="margin-top: 10px;">Create Button Entry</button>
+    </div>
+
+    <div id="searchSection" class="create-form hidden" style="margin-top: 20px;">
+      <h2>🔍 Search Buttons</h2>
+      <div class="form-grid" style="margin-bottom: 10px;">
+        <div>
+          <label>Title/Name</label>
+          <input type="text" id="searchTitle" placeholder="Button name">
+        </div>
+        <div>
+          <label>Material</label>
+          <input type="text" id="searchMaterial" placeholder="Material">
+        </div>
+        <div>
+          <label>Color</label>
+          <input type="text" id="searchColor" placeholder="Color">
+        </div>
+        <div>
+          <label>Style</label>
+          <input type="text" id="searchStyle" placeholder="Style">
+        </div>
+        <div>
+          <label>NBS Code</label>
+          <input type="text" id="searchNbsCode" placeholder="NBS Code">
+        </div>
+        <div>
+          <label>Division</label>
+          <select id="searchDivision">
+            <option value="">Any</option>
+            <option value="I">I (Old, pre-1918)</option>
+            <option value="III">III (Modern, post-1918)</option>
+            <option value="IX">IX (Age uncertain)</option>
+          </select>
+        </div>
+        <div>
+          <label>Section</label>
+          <input type="number" id="searchSection" placeholder="Section (1-27)" min="1" max="27">
+        </div>
+        <div>
+          <label>Back Type</label>
+          <input type="text" id="searchBackType" placeholder="Back Type">
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="searchButtons()" style="background: #28a745;">🔍 Search</button>
+        <button onclick="clearSearch()" style="background: #6c757d;">Clear Filters</button>
+      </div>
+      <div id="searchResults" style="margin-top: 15px; font-size: 14px; color: #666;"></div>
+    </div>
+
+    <div id="itemsSection" class="items-grid"></div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:4000';
+    let token = localStorage.getItem('token');
+    let userEmail = localStorage.getItem('userEmail');
+    let uploadedImages = [];
+    let buttonsData = []; // For batch mode
+
+    // Ensure analyzing message is hidden on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const analyzingMsg = document.getElementById('analyzingMsg');
+      if (analyzingMsg) analyzingMsg.classList.add('hidden');
+    });
+
+    if (token) showLoggedIn();
+
+    function showLoading(text) {
+      document.getElementById('loadingText').textContent = text || 'Processing...';
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+
+    function showReg() {
+      document.getElementById('confirmPassword').classList.remove('hidden');
+      document.getElementById('regBtn').textContent = 'Create Account';
+      document.getElementById('regBtn').onclick = doRegister;
+    }
+
+    function togglePwd() {
+      const pwd = document.getElementById('password');
+      const confirm = document.getElementById('confirmPassword');
+      const newType = pwd.type === 'password' ? 'text' : 'password';
+      pwd.type = newType;
+      if (confirm) confirm.type = newType;
+    }
+
+    async function doRegister() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const username = email.split('@')[0];
+
+      if (!email || !password) return showMsg('Email and password required', 'error');
+      if (password !== confirmPassword) return showMsg('Passwords do not match', 'error');
+
+      showLoading('Creating account...');
+      try {
+        const res = await fetch(API_URL + '/api/v1/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, email, password })
+        });
+        const data = await res.json();
+        hideLoading();
+        
+        if (res.ok) {
+          token = data.data.accessToken;
+          userEmail = email;
+          localStorage.setItem('token', token);
+          localStorage.setItem('userEmail', userEmail);
+          showMsg('Registration successful!', 'success');
+          document.getElementById('confirmPassword').classList.add('hidden');
+          showLoggedIn();
+        } else {
+          showMsg(data.error?.message || 'Registration failed', 'error');
+        }
+      } catch (err) {
+        hideLoading();
+        showMsg('Network error: ' + err.message, 'error');
+      }
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) return showMsg('Email and password required', 'error');
+
+      showLoading('Logging in...');
+      try {
+        const res = await fetch(API_URL + '/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        hideLoading();
+        
+        if (res.ok) {
+          token = data.data.accessToken;
+          userEmail = email;
+          localStorage.setItem('token', token);
+          localStorage.setItem('userEmail', userEmail);
+          showMsg('Login successful!', 'success');
+          showLoggedIn();
+        } else {
+          showMsg(data.error?.message || 'Login failed', 'error');
+        }
+      } catch (err) {
+        hideLoading();
+        showMsg('Network error: ' + err.message, 'error');
+      }
+    }
+
+    function doLogout() {
+      token = null;
+      userEmail = null;
+      uploadedImages = [];
+      localStorage.removeItem('token');
+      localStorage.removeItem('userEmail');
+      document.getElementById('authSection').classList.remove('hidden');
+      document.getElementById('loggedInSection').classList.add('hidden');
+      document.getElementById('createSection').classList.add('hidden');
+      document.getElementById('confirmPassword').classList.add('hidden');
+      document.getElementById('itemsSection').innerHTML = '';
+      document.getElementById('regBtn').textContent = 'Register';
+      document.getElementById('regBtn').onclick = showReg;
+      showMsg('Logged out', 'success');
+    }
+
+    function handleTokenExpiration() {
+      showMsg('Session expired. Please log in again.', 'error');
+      doLogout();
+    }
+
+    function showLoggedIn() {
+      document.getElementById('authSection').classList.add('hidden');
+      document.getElementById('loggedInSection').classList.remove('hidden');
+      document.getElementById('createSection').classList.remove('hidden');
+      document.getElementById('userEmail').textContent = userEmail;
+      document.getElementById('analyzingMsg').classList.add('hidden');
+      loadItems();
+    }
+
+    async function handleImageSelect() {
+      const fileInput = document.getElementById('imageFiles');
+      const files = Array.from(fileInput.files);
+      
+      if (files.length === 0) {
+        document.getElementById('analyzingMsg').classList.add('hidden');
+        buttonsData = [];
+        return;
+      }
+
+      const analyzingMsg = document.getElementById('analyzingMsg');
+      const analyzeText = document.getElementById('analyzeText');
+      
+      analyzeText.textContent = `Uploading ${files.length} image(s)...`;
+      analyzingMsg.classList.remove('hidden');
+
+      try {
+        const formData = new FormData();
+        files.forEach(file => formData.append('images', file));
+
+        analyzeText.textContent = `Analyzing ${files.length} image(s) with AI...`;
+        
+        const res = await fetch(API_URL + '/api/v1/upload', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: formData
+        });
+
+        if (res.status === 401) {
+          handleTokenExpiration();
+          analyzingMsg.classList.add('hidden');
+          return;
+        }
+
+        if (res.ok) {
+          const data = await res.json();
+          
+          // Check if batch mode (multiple buttons) or single mode
+          if (data.data.buttons && data.data.buttons.length > 1) {
+            // BATCH MODE: Multiple button pairs detected
+            buttonsData = data.data.buttons;
+            uploadedImages = [];
+            
+            const previewDiv = document.getElementById('imagePreview');
+            let allImages = [];
+            buttonsData.forEach(btn => allImages.push(...btn.images));
+            
+            previewDiv.innerHTML = allImages.map((img, idx) => `
+              <div class="image-preview-item">
+                <img src="${API_URL}${img.url}" alt="Preview ${idx + 1}">
+              </div>
+            `).join('');
+            
+            const createBtn = document.getElementById('createBtn');
+            createBtn.textContent = `Create All ${buttonsData.length} Buttons`;
+            
+            analyzeText.textContent = `✓ ${buttonsData.length} buttons detected! Click to create all.`;
+            setTimeout(() => analyzingMsg.classList.add('hidden'), 3000);
+            showMsg(`✓ ${buttonsData.length} buttons detected from ${files.length} images!`, 'success');
+            
+          } else if (data.data.buttons && data.data.buttons.length === 1) {
+            // SINGLE MODE: One button pair
+            buttonsData = [];
+            const button = data.data.buttons[0];
+            uploadedImages = button.images;
+            
+            const previewDiv = document.getElementById('imagePreview');
+            previewDiv.innerHTML = uploadedImages.map((img, idx) => `
+              <div class="image-preview-item">
+                <img src="${API_URL}${img.url}" alt="Preview ${idx + 1}">
+                <button class="remove" onclick="removeImage(${idx})" title="Remove">×</button>
+              </div>
+            `).join('');
+            
+            const info = button.buttonInfo;
+            if (info) {
+              // Auto-populate title with NBS code or descriptive name
+              // Auto-populate title with descriptive name
+              let titleParts = [];
+              if (info.age && !info.age.includes('Modern')) titleParts.push(info.age);
+              if (info.material) titleParts.push(info.material);
+              if (info.color) titleParts.push(info.color);
+              if (info.pictorialSubject) titleParts.push(info.pictorialSubject);
+              if (info.style) titleParts.push(info.style);
+              let titleValue = titleParts.join(' ') || 'Button';
+              document.getElementById('title').value = titleValue;
+
+              if (info.material) document.getElementById('material').value = info.material;
+              if (info.size) document.getElementById('size').value = info.size;
+              if (info.diameter) document.getElementById('diameter').value = info.diameter;
+              if (info.color) document.getElementById('color').value = info.color;
+              if (info.holes != null) document.getElementById('holes').value = info.holes;
+              if (info.style) document.getElementById('style').value = info.style;
+              if (info.nbsCode) document.getElementById('nbsCode').value = info.nbsCode;
+              if (info.division) document.getElementById('division').value = info.division;
+              if (info.section != null) document.getElementById('section').value = info.section;
+              if (info.sectionName) document.getElementById('sectionName').value = info.sectionName;
+              if (info.age) document.getElementById('age').value = info.age;
+              if (info.backType) document.getElementById('backType').value = info.backType;
+              if (info.pictorialSubject) document.getElementById('pictorialSubject').value = info.pictorialSubject;
+              if (info.pattern) document.getElementById('pattern').value = info.pattern;
+              if (info.usageType) document.getElementById('usageType').value = info.usageType;
+              if (info.buttonCondition) document.getElementById('buttonCondition').value = info.buttonCondition;
+              if (info.manufacturer) document.getElementById('manufacturer').value = info.manufacturer;
+              if (info.notes) document.getElementById('notes').value = info.notes;
+              
+              analyzeText.textContent = `✓ Button analyzed successfully!`;
+              setTimeout(() => analyzingMsg.classList.add('hidden'), 3000);
+              showMsg(`✓ Button analyzed! Fields auto-populated.`, 'success');
+            } else {
+              // No AI data
+              document.getElementById('title').value = 'Button 1';
+            }
+
+            // Final fallback for title
+            if (!document.getElementById('title').value) {
+              document.getElementById('title').value = 'Button 1';
+            }
+            
+            const createBtn = document.getElementById('createBtn');
+            createBtn.textContent = 'Create Button Entry';
+          }
+        } else {
+          const errorData = await res.json();
+          console.error('Upload failed:', errorData);
+          analyzingMsg.classList.add('hidden');
+          fileInput.value = '';
+          document.getElementById('imagePreview').innerHTML = '';
+          uploadedImages = [];
+          buttonsData = [];
+          showMsg('Upload failed: ' + (errorData.error?.message || res.statusText), 'error');
+        }
+      } catch (err) {
+        console.error('Upload error:', err);
+        analyzingMsg.classList.add('hidden');
+        fileInput.value = '';
+        document.getElementById('imagePreview').innerHTML = '';
+        uploadedImages = [];
+        buttonsData = [];
+        showMsg('Upload error: ' + err.message, 'error');
+      }
+    }
+
+    function removeImage(index) {
+      uploadedImages.splice(index, 1);
+      const previewDiv = document.getElementById('imagePreview');
+      previewDiv.innerHTML = uploadedImages.map((img, idx) => `
+        <div class="image-preview-item">
+          <img src="${API_URL}${img.url}" alt="Preview ${idx + 1}">
+          <button class="remove" onclick="removeImage(${idx})" title="Remove">×</button>
+        </div>
+      `).join('');
+    }
+
+    async function compareImages(imageUrl1, imageUrl2) {
+      return new Promise((resolve) => {
+        const img1 = new Image();
+        const img2 = new Image();
+        img1.crossOrigin = 'anonymous';
+        img2.crossOrigin = 'anonymous';
+        
+        let loaded = 0;
+        const checkLoaded = () => {
+          loaded++;
+          if (loaded === 2) {
+            try {
+              // Create canvases
+              const canvas1 = document.createElement('canvas');
+              const canvas2 = document.createElement('canvas');
+              const size = 100; // Compare at 100x100 for speed
+              
+              canvas1.width = canvas1.height = size;
+              canvas2.width = canvas2.height = size;
+              
+              const ctx1 = canvas1.getContext('2d');
+              const ctx2 = canvas2.getContext('2d');
+              
+              // Draw resized images
+              ctx1.drawImage(img1, 0, 0, size, size);
+              ctx2.drawImage(img2, 0, 0, size, size);
+              
+              // Get pixel data
+              const data1 = ctx1.getImageData(0, 0, size, size).data;
+              const data2 = ctx2.getImageData(0, 0, size, size).data;
+              
+              // Compare pixels
+              let diff = 0;
+              for (let i = 0; i < data1.length; i += 4) {
+                diff += Math.abs(data1[i] - data2[i]);     // R
+                diff += Math.abs(data1[i+1] - data2[i+1]); // G
+                diff += Math.abs(data1[i+2] - data2[i+2]); // B
+              }
+              
+              // Calculate similarity (0-100%)
+              const maxDiff = size * size * 3 * 255;
+              const similarity = 100 - (diff / maxDiff * 100);
+              resolve(similarity);
+            } catch (err) {
+              console.error('Image comparison error:', err);
+              resolve(0);
+            }
+          }
+        };
+        
+        img1.onload = checkLoaded;
+        img2.onload = checkLoaded;
+        img1.onerror = () => resolve(0);
+        img2.onerror = () => resolve(0);
+        
+        img1.src = API_URL + imageUrl1;
+        img2.src = API_URL + imageUrl2;
+      });
+    }
+
+    async function checkDuplicate(buttonData) {
+      try {
+        const res = await fetch(API_URL + '/api/v1/items', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.status === 401) {
+          handleTokenExpiration();
+          return null;
+        }
+        
+        const data = await res.json();
+        if (!res.ok) return null;
+        
+        // FASTEST CHECK: Filename matching (instant)
+        const filenameDuplicates = [];
+        if (buttonData.images && buttonData.images.length > 0) {
+          for (const existingItem of data.data) {
+            if (!existingItem.images || existingItem.images.length === 0) continue;
+            
+            // Extract filename from URL path (e.g., "/uploads/abc123.jpg" -> "abc123.jpg")
+            const getFilename = (url) => {
+              const urlStr = url.url || url;
+              return urlStr.split('/').pop().split('?')[0];
+            };
+            
+            const newFilenames = buttonData.images.map(img => getFilename(img));
+            const existingFilenames = existingItem.images.map(img => getFilename(img));
+            
+            // Check if any filename matches
+            const hasMatch = newFilenames.some(newFile => 
+              existingFilenames.some(existingFile => existingFile === newFile)
+            );
+            
+            if (hasMatch) {
+              filenameDuplicates.push({ ...existingItem, matchType: 'filename' });
+            }
+          }
+        }
+        
+        if (filenameDuplicates.length > 0) {
+          return filenameDuplicates;
+        }
+        
+        // FALLBACK: Text field matching (only if no filename match)
+        const textMatches = data.data.filter(item => {
+          let matchScore = 0;
+          let totalFields = 0;
+          
+          if (buttonData.material && item.material) {
+            totalFields++;
+            if (buttonData.material.toLowerCase() === item.material.toLowerCase()) matchScore++;
+          }
+          if (buttonData.color && item.color) {
+            totalFields++;
+            if (buttonData.color.toLowerCase() === item.color.toLowerCase()) matchScore++;
+          }
+          if (buttonData.size && item.size) {
+            totalFields++;
+            if (buttonData.size.toLowerCase() === item.size.toLowerCase()) matchScore++;
+          }
+          if (buttonData.nbsCode && item.nbsCode) {
+            totalFields++;
+            if (buttonData.nbsCode.toLowerCase() === item.nbsCode.toLowerCase()) matchScore++;
+          }
+          if (buttonData.style && item.style) {
+            totalFields++;
+            if (buttonData.style.toLowerCase() === item.style.toLowerCase()) matchScore++;
+          }
+          
+          return totalFields >= 3 && matchScore >= 3;
+        });
+        
+        return textMatches.length > 0 ? textMatches.map(item => ({ ...item, matchType: 'text' })) : null;
+      } catch (err) {
+        console.error('Duplicate check error:', err);
+        return null;
+      }
+    }
+
+    function showDuplicateComparison(newButton, existingButtons) {
+      const comparison = existingButtons.map(existing => {
+        let header = '';
+        if (existing.matchType === 'filename') {
+          header = `📁 FILENAME MATCH: Same image file detected! (DUPLICATE!)\n\n`;
+        } else if (existing.imageSimilarity) {
+          header = `🖼️ IMAGE MATCH: ${existing.imageSimilarity}% similar (VERY LIKELY DUPLICATE!)\n\n`;
+        }
+        
+        const fields = [
+          { label: 'Title', new: newButton.title, existing: existing.title },
+          { label: 'Material', new: newButton.material, existing: existing.material },
+          { label: 'Color', new: newButton.color, existing: existing.color },
+          { label: 'Size', new: newButton.size, existing: existing.size },
+          { label: 'Style', new: newButton.style, existing: existing.style },
+          { label: 'NBS Code', new: newButton.nbsCode, existing: existing.nbsCode },
+          { label: 'Division', new: newButton.division, existing: existing.division },
+          { label: 'Back Type', new: newButton.backType, existing: existing.backType }
+        ];
+        
+        const fieldComparison = fields.filter(f => f.new || f.existing).map(f => {
+          const match = (f.new || '').toLowerCase() === (f.existing || '').toLowerCase();
+          const icon = match ? '✓' : '⚠';
+          return `${icon} ${f.label}: "${f.existing || '(none)'}" → "${f.new || '(none)'}"`;
+        }).join('\n');
+        
+        return header + fieldComparison;
+      }).join('\n\n---\n\n');
+      
+      const hasFilenameMatch = existingButtons.some(e => e.matchType === 'filename');
+      const hasImageMatch = existingButtons.some(e => e.imageSimilarity);
+      const warningLevel = hasFilenameMatch ? '🚨 DUPLICATE FILE DETECTED!' : 
+                           hasImageMatch ? '🚨 DUPLICATE IMAGE DETECTED!' : 
+                           '⚠️ POSSIBLE DUPLICATE';
+      
+      const explanation = hasFilenameMatch 
+        ? '🚨 Same image filename found! This is definitely a duplicate.'
+        : hasImageMatch 
+        ? '🚨 Images are nearly identical! This is almost certainly a duplicate.'
+        : '⚠️ The AI may have analyzed the same button differently.';
+      
+      return `${warningLevel}\n\nExisting in database:\n${comparison}\n\n${explanation}\nCompare the values above carefully!\n\nClick OK to create as NEW entry anyway\nClick Cancel to skip this duplicate`;
+    }
+
+    async function createItem() {
+      // Check if batch mode
+      if (buttonsData.length > 0) {
+        return await createBatchButtons();
+      }
+      
+      // Single mode
+      const title = document.getElementById('title').value;
+      if (!title) return showMsg('Button name/title required', 'error');
+
+      const createBtn = document.getElementById('createBtn');
+      createBtn.disabled = true;
+      createBtn.textContent = 'Checking...';
+      
+      // Prepare button data
+      const buttonData = {
+        title,
+        content: document.getElementById('content').value,
+        images: uploadedImages,
+        material: document.getElementById('material').value,
+        size: document.getElementById('size').value,
+        diameter: document.getElementById('diameter').value,
+        color: document.getElementById('color').value,
+        holes: document.getElementById('holes').value ? parseInt(document.getElementById('holes').value) : null,
+        style: document.getElementById('style').value,
+        nbsCode: document.getElementById('nbsCode').value,
+        division: document.getElementById('division').value,
+        section: document.getElementById('section').value ? parseInt(document.getElementById('section').value) : null,
+        sectionName: document.getElementById('sectionName').value,
+        age: document.getElementById('age').value,
+        backType: document.getElementById('backType').value,
+        pictorialSubject: document.getElementById('pictorialSubject').value,
+        pattern: document.getElementById('pattern').value,
+        usageType: document.getElementById('usageType').value,
+        buttonCondition: document.getElementById('buttonCondition').value,
+        manufacturer: document.getElementById('manufacturer').value,
+        notes: document.getElementById('notes').value
+      };
+      
+      // Check for duplicates
+      const duplicates = await checkDuplicate(buttonData);
+      if (duplicates && duplicates.length > 0) {
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Button Entry';
+        
+        if (!confirm(showDuplicateComparison(buttonData, duplicates))) {
+          showMsg('Creation cancelled - duplicate detected', 'error');
+          return;
+        }
+      }
+      
+      createBtn.textContent = 'Creating...';
+      showLoading('Saving button entry...');
+
+      try {
+        const res = await fetch(API_URL + '/api/v1/items', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(buttonData)
+        });
+
+        hideLoading();
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Button Entry';
+
+        if (res.status === 401) {
+          handleTokenExpiration();
+          return;
+        }
+
+        if (res.ok) {
+          showMsg('✓ Button entry created successfully!', 'success');
+          clearForm();
+          loadItems();
+        } else {
+          const errorData = await res.json();
+          showMsg('Failed to create: ' + (errorData.error?.message || res.statusText), 'error');
+        }
+      } catch (err) {
+        hideLoading();
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Button Entry';
+        showMsg('Network error: ' + err.message, 'error');
+        console.error('Create error:', err);
+      }
+    }
+
+    async function createBatchButtons() {
+      const createBtn = document.getElementById('createBtn');
+      createBtn.disabled = true;
+      
+      // Check for duplicates in batch
+      showLoading('Checking for duplicates...');
+      const duplicateInfo = [];
+      
+      for (let i = 0; i < buttonsData.length; i++) {
+        const button = buttonsData[i];
+        const duplicates = await checkDuplicate(button.buttonInfo);
+        if (duplicates && duplicates.length > 0) {
+          duplicateInfo.push({ index: i, button: button.buttonInfo, existing: duplicates });
+        }
+      }
+      
+      if (duplicateInfo.length > 0) {
+        const comparisons = duplicateInfo.map(dup => {
+          const btnNum = dup.index + 1;
+          const comparison = showDuplicateComparison(dup.button, dup.existing);
+          return `BUTTON #${btnNum}:\n${comparison}`;
+        }).join('\n\n═══════════════════════════\n\n');
+        
+        const msg = duplicateInfo.length === buttonsData.length
+          ? `⚠️ ALL ${buttonsData.length} BUTTONS APPEAR TO BE DUPLICATES!\n\n${comparisons}`
+          : `⚠️ ${duplicateInfo.length} of ${buttonsData.length} BUTTONS MAY BE DUPLICATES\n\n${comparisons}`;
+        
+        if (!confirm(`${msg}\n\nClick OK to create them ALL anyway\nClick Cancel to SKIP this batch`)) {
+          hideLoading();
+          createBtn.disabled = false;
+          createBtn.textContent = 'Create Button Entry';
+          showMsg('Batch creation cancelled - duplicates detected', 'error');
+          return;
+        }
+      }
+      
+      showLoading(`Creating ${buttonsData.length} buttons...`);
+      
+      let successCount = 0;
+      let failCount = 0;
+      
+      try {
+        for (let i = 0; i < buttonsData.length; i++) {
+          const button = buttonsData[i];
+          const buttonNum = i + 1;
+          
+          showLoading(`Creating button ${buttonNum} of ${buttonsData.length}...`);
+          
+          try {
+            const res = await fetch(API_URL + '/api/v1/items', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+              },
+              body: JSON.stringify({
+                title: button.buttonInfo.nbsCode || `Button ${buttonNum}`,
+                images: button.images,
+                material: button.buttonInfo.material || '',
+                size: button.buttonInfo.size || '',
+                diameter: button.buttonInfo.diameter || '',
+                color: button.buttonInfo.color || '',
+                holes: button.buttonInfo.holes || null,
+                style: button.buttonInfo.style || '',
+                nbsCode: button.buttonInfo.nbsCode || '',
+                division: button.buttonInfo.division || '',
+                section: button.buttonInfo.section || null,
+                sectionName: button.buttonInfo.sectionName || '',
+                age: button.buttonInfo.age || '',
+                backType: button.buttonInfo.backType || '',
+                pictorialSubject: button.buttonInfo.pictorialSubject || '',
+                pattern: button.buttonInfo.pattern || '',
+                usageType: button.buttonInfo.usageType || '',
+                buttonCondition: button.buttonInfo.buttonCondition || '',
+                manufacturer: button.buttonInfo.manufacturer || '',
+                notes: button.buttonInfo.notes || '',
+                content: ''
+              })
+            });
+            
+            if (res.status === 401) {
+              hideLoading();
+              createBtn.disabled = false;
+              createBtn.textContent = 'Create Button Entry';
+              handleTokenExpiration();
+              return;
+            }
+            
+            if (res.ok) {
+              successCount++;
+            } else {
+              failCount++;
+              console.error(`Failed to create button ${buttonNum}`);
+            }
+          } catch (err) {
+            failCount++;
+            console.error(`Error creating button ${buttonNum}:`, err);
+          }
+        }
+        
+        hideLoading();
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Button Entry';
+        
+        if (failCount === 0) {
+          showMsg(`✓ Successfully created all ${successCount} buttons!`, 'success');
+        } else {
+          showMsg(`Created ${successCount} buttons, ${failCount} failed`, 'error');
+        }
+        
+        clearForm();
+        loadItems();
+        
+      } catch (err) {
+        hideLoading();
+        createBtn.disabled = false;
+        createBtn.textContent = 'Create Button Entry';
+        showMsg('Batch create error: ' + err.message, 'error');
+      }
+    }
+
+    function clearForm() {
+      ['title', 'content', 'material', 'size', 'diameter', 'color', 'holes', 'style', 'nbsCode', 'division', 'section', 'sectionName', 'age', 'backType', 'pictorialSubject', 'pattern', 'usageType', 'buttonCondition', 'manufacturer', 'notes'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('imageFiles').value = '';
+      document.getElementById('imagePreview').innerHTML = '';
+      document.getElementById('analyzingMsg').classList.add('hidden');
+      document.getElementById('createBtn').textContent = 'Create Button Entry';
+      uploadedImages = [];
+      buttonsData = [];
+    }
+
+    async function loadItems() {
+      try {
+        const res = await fetch(API_URL + '/api/v1/items', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        if (res.status === 401) {
+          handleTokenExpiration();
+          return;
+        }
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+          const itemsHTML = data.data.map(item => {
+            let imagesHTML = '';
+            if (item.images && item.images.length > 0) {
+              imagesHTML = '<div class="item-images">' + 
+                item.images.map(img => `<img src="${API_URL}${img.url}" alt="${item.title}" onclick="window.open(this.src)" style="max-width: 120px; max-height: 120px; object-fit: cover;">`).join('') +
+                '</div>';
+            }
+            
+            let detailsHTML = '<div class="button-details">';
+            if (item.material) detailsHTML += '<div><strong>Material:</strong> ' + item.material + '</div>';
+            if (item.color) detailsHTML += '<div><strong>Color:</strong> ' + item.color + '</div>';
+            if (item.size) detailsHTML += '<div><strong>Size:</strong> ' + item.size + '</div>';
+            if (item.diameter) detailsHTML += '<div><strong>Diameter:</strong> ' + item.diameter + '</div>';
+            if (item.holes != null) detailsHTML += '<div><strong>Holes:</strong> ' + item.holes + '</div>';
+            if (item.style) detailsHTML += '<div><strong>Style:</strong> ' + item.style + '</div>';
+            if (item.nbsCode) detailsHTML += '<div><strong>NBS:</strong> ' + item.nbsCode + '</div>';
+            if (item.division) detailsHTML += '<div><strong>Division:</strong> ' + item.division + '</div>';
+            if (item.section) detailsHTML += '<div><strong>Section:</strong> ' + item.section + ' (' + (item.sectionName || '') + ')</div>';
+            if (item.age) detailsHTML += '<div><strong>Age:</strong> ' + item.age + '</div>';
+            if (item.backType) detailsHTML += '<div><strong>Back:</strong> ' + item.backType + '</div>';
+            if (item.pictorialSubject) detailsHTML += '<div><strong>Subject:</strong> ' + item.pictorialSubject + '</div>';
+            if (item.pattern) detailsHTML += '<div><strong>Pattern:</strong> ' + item.pattern + '</div>';
+            if (item.usageType) detailsHTML += '<div><strong>Usage:</strong> ' + item.usageType + '</div>';
+            if (item.buttonCondition) detailsHTML += '<div><strong>Condition:</strong> ' + item.buttonCondition + '</div>';
+            if (item.manufacturer) detailsHTML += '<div><strong>Mfg:</strong> ' + item.manufacturer + '</div>';
+            if (item.notes) detailsHTML += '<div><strong>Notes:</strong> ' + item.notes + '</div>';
+            detailsHTML += '</div>';
+            
+            return `
+              <div class="item-card">
+                ${imagesHTML}
+                <h3>${item.title}</h3>
+                <p>${item.content || ''}</p>
+                ${detailsHTML}
+                <button class="delete-btn" onclick="deleteItem(${item.id})" style="margin-top: 10px;">Delete</button>
+              </div>
+            `;
+          }).join('');
+          
+          document.getElementById('itemsSection').innerHTML = itemsHTML || '<p>No buttons yet. Add one!</p>';
+        }
+      } catch (err) {
+        showMsg('Failed to load items: ' + err.message, 'error');
+      }
+    }
+
+    let allItemsCache = null;
+
+    async function getAllItems() {
+      if (allItemsCache) return allItemsCache;
+      
+      const res = await fetch(API_URL + '/api/v1/items', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      
+      if (res.status === 401) {
+        handleTokenExpiration();
+        return [];
+      }
+      
+      const data = await res.json();
+      if (res.ok) {
+        allItemsCache = data.data;
+        return data.data;
+      }
+      return [];
+    }
+
+    function toggleSearch() {
+      const searchSection = document.getElementById('searchSection');
+      console.log('toggleSearch called, searchSection:', searchSection);
+      const wasHidden = searchSection.classList.contains('hidden');
+      searchSection.classList.toggle('hidden');
+      const isNowHidden = searchSection.classList.contains('hidden');
+      console.log('Was hidden:', wasHidden, '→ Now hidden:', isNowHidden);
+      if (!isNowHidden) {
+        console.log('✅ Search panel should now be VISIBLE');
+        console.log('Panel display:', window.getComputedStyle(searchSection).display);
+        console.log('Panel visibility:', window.getComputedStyle(searchSection).visibility);
+      } else {
+        console.log('❌ Search panel is HIDDEN');
+      }
+    }
+
+    async function searchButtons() {
+      console.log('searchButtons called');
+      try {
+        const filters = {
+          title: document.getElementById('searchTitle').value.toLowerCase().trim(),
+          material: document.getElementById('searchMaterial').value.toLowerCase().trim(),
+          color: document.getElementById('searchColor').value.toLowerCase().trim(),
+          style: document.getElementById('searchStyle').value.toLowerCase().trim(),
+          nbsCode: document.getElementById('searchNbsCode').value.toLowerCase().trim(),
+          division: document.getElementById('searchDivision').value,
+          section: document.getElementById('searchSection').value,
+          backType: document.getElementById('searchBackType').value.toLowerCase().trim()
+        };
+
+        // Check if any filter is active
+        const hasFilters = Object.values(filters).some(v => v !== '');
+        
+        if (!hasFilters) {
+          showMsg('Please enter at least one search criterion', 'error');
+          return;
+        }
+
+        showLoading('Searching...');
+        const allItems = await getAllItems();
+        hideLoading();
+        
+        const filtered = allItems.filter(item => {
+          // Title
+          if (filters.title && !item.title?.toLowerCase().includes(filters.title)) return false;
+          
+          // Material
+          if (filters.material && !item.material?.toLowerCase().includes(filters.material)) return false;
+          
+          // Color
+          if (filters.color && !item.color?.toLowerCase().includes(filters.color)) return false;
+          
+          // Style
+          if (filters.style && !item.style?.toLowerCase().includes(filters.style)) return false;
+          
+          // NBS Code
+          if (filters.nbsCode && !item.nbsCode?.toLowerCase().includes(filters.nbsCode)) return false;
+          
+          // Division (exact match)
+          if (filters.division && item.division !== filters.division) return false;
+          
+          // Section (exact match)
+          if (filters.section && item.section != filters.section) return false;
+          
+          // Back Type
+          if (filters.backType && !item.backType?.toLowerCase().includes(filters.backType)) return false;
+          
+          return true;
+        });
+
+        displayFilteredItems(filtered);
+        
+        const resultsDiv = document.getElementById('searchResults');
+        resultsDiv.textContent = `Found ${filtered.length} button${filtered.length !== 1 ? 's' : ''}`;
+        resultsDiv.style.color = filtered.length > 0 ? '#28a745' : '#dc3545';
+      } catch (err) {
+        hideLoading();
+        showMsg('Search error: ' + err.message, 'error');
+        console.error('Search error:', err);
+      }
+    }
+
+    function clearSearch() {
+      ['searchTitle', 'searchMaterial', 'searchColor', 'searchStyle', 'searchNbsCode', 'searchBackType', 'searchSection'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('searchDivision').value = '';
+      document.getElementById('searchResults').textContent = '';
+      allItemsCache = null;
+      loadItems();
+    }
+
+    function displayFilteredItems(items) {
+      const itemsHTML = items.map(item => {
+        let imagesHTML = '';
+        if (item.images && item.images.length > 0) {
+          imagesHTML = '<div class="item-images">' + 
+            item.images.map(img => `<img src="${API_URL}${img.url}" alt="${item.title}" onclick="window.open(this.src)" style="max-width: 120px; max-height: 120px; object-fit: cover;">`).join('') +
+            '</div>';
+        }
+        
+        let detailsHTML = '<div class="button-details">';
+        if (item.material) detailsHTML += '<div><strong>Material:</strong> ' + item.material + '</div>';
+        if (item.color) detailsHTML += '<div><strong>Color:</strong> ' + item.color + '</div>';
+        if (item.size) detailsHTML += '<div><strong>Size:</strong> ' + item.size + '</div>';
+        if (item.diameter) detailsHTML += '<div><strong>Diameter:</strong> ' + item.diameter + '</div>';
+        if (item.holes != null) detailsHTML += '<div><strong>Holes:</strong> ' + item.holes + '</div>';
+        if (item.style) detailsHTML += '<div><strong>Style:</strong> ' + item.style + '</div>';
+        if (item.nbsCode) detailsHTML += '<div><strong>NBS:</strong> ' + item.nbsCode + '</div>';
+        if (item.division) detailsHTML += '<div><strong>Division:</strong> ' + item.division + '</div>';
+        if (item.section) detailsHTML += '<div><strong>Section:</strong> ' + item.section + ' (' + (item.sectionName || '') + ')</div>';
+        if (item.age) detailsHTML += '<div><strong>Age:</strong> ' + item.age + '</div>';
+        if (item.backType) detailsHTML += '<div><strong>Back:</strong> ' + item.backType + '</div>';
+        if (item.pictorialSubject) detailsHTML += '<div><strong>Subject:</strong> ' + item.pictorialSubject + '</div>';
+        if (item.pattern) detailsHTML += '<div><strong>Pattern:</strong> ' + item.pattern + '</div>';
+        if (item.usageType) detailsHTML += '<div><strong>Usage:</strong> ' + item.usageType + '</div>';
+        if (item.buttonCondition) detailsHTML += '<div><strong>Condition:</strong> ' + item.buttonCondition + '</div>';
+        if (item.manufacturer) detailsHTML += '<div><strong>Mfg:</strong> ' + item.manufacturer + '</div>';
+        if (item.notes) detailsHTML += '<div><strong>Notes:</strong> ' + item.notes + '</div>';
+        detailsHTML += '</div>';
+        
+        return `
+          <div class="item-card">
+            ${imagesHTML}
+            <h3>${item.title}</h3>
+            <p>${item.content || ''}</p>
+            ${detailsHTML}
+            <button class="delete-btn" onclick="deleteItem(${item.id})" style="margin-top: 10px;">Delete</button>
+          </div>
+        `;
+      }).join('');
+      
+      document.getElementById('itemsSection').innerHTML = itemsHTML || '<p>No buttons match your search criteria.</p>';
+    }
+
+    async function deleteItem(id) {
+      if (!confirm('Delete this button entry?')) return;
+      
+      showLoading('Deleting...');
+      try {
+        const res = await fetch(API_URL + '/api/v1/items/' + id, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        hideLoading();
+        
+        if (res.status === 401) {
+          handleTokenExpiration();
+          return;
+        }
+        
+        if (res.ok) {
+          showMsg('✓ Button deleted', 'success');
+          loadItems();
+        } else {
+          showMsg('Failed to delete', 'error');
+        }
+      } catch (err) {
+        hideLoading();
+        showMsg('Network error: ' + err.message, 'error');
+      }
+    }
+
+    function showMsg(msg, type) {
+      const el = document.getElementById('message');
+      el.textContent = msg;
+      el.className = type;
+      const timeout = type === 'error' ? 30000 : 5000; // Errors stay 30s, success 5s
+      setTimeout(function() { el.textContent = ''; el.className = ''; }, timeout);
+    }
+
+    async function clearUploadsFolder() {
+      const count = await fetch(API_URL + '/api/v1/items', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      }).then(r => r.json()).then(d => d.data?.length || 0).catch(() => 0);
+      
+      if (!confirm(`⚠️ CLEAR UPLOADS FOLDER\n\nThis will delete ALL uploaded image files from the server.\n\nYour ${count} database entries will remain intact, but the actual image files will be removed to free up space.\n\n⚠️ This action CANNOT be undone!\n\nClick OK to proceed, or Cancel to keep the files.`)) {
+        return;
+      }
+      
+      showLoading('Clearing uploads folder...');
+      
+      try {
+        const res = await fetch(API_URL + '/api/v1/upload', {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        
+        hideLoading();
+        
+        if (res.status === 401) {
+          handleTokenExpiration();
+          return;
+        }
+        
+        if (res.ok) {
+          const data = await res.json();
+          showMsg(`✓ Uploads folder cleared! ${data.filesDeleted || 'All'} files removed.`, 'success');
+        } else {
+          const errorData = await res.json();
+          showMsg('Failed to clear uploads: ' + (errorData.error?.message || res.statusText), 'error');
+        }
+      } catch (err) {
+        hideLoading();
+        showMsg('Network error: ' + err.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
+
+

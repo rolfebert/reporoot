@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  passwordHash   String
+  createdAt      DateTime @default(now())
+  refreshTokens  RefreshToken[]
+  items          Item[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Item {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String?  @db.Text
+  owner       User     @relation(fields: [ownerId], references: [id])
+  ownerId     Int
+  images      ItemImage[]
+
+  // NBS Classification Fields
+  nbsCode          String?
+  division         String?
+  section          Int?
+  sectionName      String?
+  age              String?
+  backType         String?
+  pictorialSubject String?
+  pattern          String?
+  usageType        String?
+  
+  // Button Physical Properties
+  material         String?
+  size             String?
+  diameter         String?
+  color            String?
+  holes            Int?
+  style            String?
+  buttonCondition  String?
+  manufacturer     String?
+  notes            String?  @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ItemImage {
+  id         Int      @id @default(autoincrement())
+  item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId     Int
+  url        String
+  label      String?
+  imageOrder Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([itemId])
+}
