@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth";
 import itemsRoutes from "./routes/items";
+import imagesRouter from './routes/images';
 import uploadRoutes from "./routes/upload";
 import { authenticateJWT } from "./middleware/auth";
 
@@ -40,6 +41,7 @@ app.use(rateLimit({
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/items", authenticateJWT, itemsRoutes);
 app.use("/api/v1/upload", authenticateJWT, uploadRoutes);
+app.use("/api/v1/images", authenticateJWT, imagesRouter);
 app.use("/uploads", express.static("uploads"));
 app.use(express.static("public"));
 

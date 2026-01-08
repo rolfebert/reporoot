@@ -19,22 +19,22 @@ model User {
 model RefreshToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields:  [userId], references: [id])
   userId    Int
   expiresAt DateTime
   createdAt DateTime @default(now())
+  @@index([userId])
 }
 
 model Item {
   id          Int      @id @default(autoincrement())
   title       String
-  content     String?  @db.Text
-  owner       User     @relation(fields: [ownerId], references: [id])
+  content     String?    @db.Text
+  owner       User     @relation(fields:  [ownerId], references: [id])
   ownerId     Int
   images      ItemImage[]
 
-  // NBS Classification Fields
-  nbsCode          String?
+  nbsCode          String? 
   division         String?
   section          Int?
   sectionName      String?
@@ -44,29 +44,39 @@ model Item {
   pattern          String?
   usageType        String?
   
-  // Button Physical Properties
   material         String?
   size             String?
   diameter         String?
   color            String?
   holes            Int?
-  style            String?
+  style            String?  
   buttonCondition  String?
   manufacturer     String?
   notes            String?  @db.Text
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  @@index([ownerId])
 }
 
 model ItemImage {
   id         Int      @id @default(autoincrement())
-  item       Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item       Item     @relation(fields:  [itemId], references: [id], onDelete: Cascade)
   itemId     Int
-  url        String
+  
+  url        String? 
+  
+  imageData      Bytes?   @db.LongBlob
+  contentType    String?
+  fileSize       Int?
+  imageHash      String?  @unique
+  originalFilename String?
+  analysisData   String?  @db.Text
+  
   label      String?
   imageOrder Int      @default(0)
   createdAt  DateTime @default(now())
 
   @@index([itemId])
+  @@index([imageHash])
 }
