@@ -10,6 +10,7 @@ const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const auth_1 = __importDefault(require("./routes/auth"));
 const items_1 = __importDefault(require("./routes/items"));
+const images_1 = __importDefault(require("./routes/images"));
 const upload_1 = __importDefault(require("./routes/upload"));
 const auth_2 = require("./middleware/auth");
 dotenv_1.default.config();
@@ -40,6 +41,7 @@ app.use((0, express_rate_limit_1.default)({
 app.use("/api/v1/auth", auth_1.default);
 app.use("/api/v1/items", auth_2.authenticateJWT, items_1.default);
 app.use("/api/v1/upload", auth_2.authenticateJWT, upload_1.default);
+app.use("/api/v1/images", auth_2.authenticateJWT, images_1.default);
 app.use("/uploads", express_1.default.static("uploads"));
 app.use(express_1.default.static("public"));
 // health

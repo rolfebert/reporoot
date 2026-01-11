@@ -8,32 +8,70 @@ const router = express.Router();
 router.post("/", async (req: AuthRequest, res) => {
   const userId = req.user!.id;
   const { 
-    title, content, images,
+    title, content, imageIds,
     material, size, diameter, color, holes, style, 
-    nbsCode, buttonCondition, manufacturer, notes 
+    nbsCode, division, section, sectionName, age, backType,
+    pictorialSubject, pattern, usageType,
+    buttonCondition, manufacturer, notes 
   } = req.body;
   
   if (!title) return res.status(400).json({ error: { message: "title required" } });
   
+  // Create the item first
   const item = await prisma.item.create({ 
     data: { 
-      title, content,
-      material, size, diameter, color,
+      title, 
+      content,
+      material, 
+      size, 
+      diameter, 
+      color,
       holes: holes ? Number(holes) : null,
-      style, nbsCode, buttonCondition, manufacturer, notes,
-      ownerId: userId,
-      images: images && Array.isArray(images) ? {
-        create: images.map((img: any, index: number) => ({
-          url: img.url,
-          label: img.label || (index === 0 ? 'front' : index === 1 ? 'back' : `image-${index + 1}`),
-          imageOrder: index
-        }))
-      } : undefined
+      style, 
+      nbsCode,
+      division,
+      section: section ? Number(section) : null,
+      sectionName,
+      age,
+      backType,
+      pictorialSubject,
+      pattern,
+      usageType,
+      buttonCondition, 
+      manufacturer, 
+      notes,
+      ownerId: userId
     },
     include: { images: true }
   });
   
-  res.status(201).json({ data: item });
+  // Link uploaded images to this item
+  if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
+    // Update the uploaded images to link them to this item
+    await prisma.itemImage.updateMany({
+      where: { id: { in: imageIds } },
+      data: { itemId: item.id }
+    });
+    
+    // Update image labels and order
+    for (let i = 0; i < imageIds.length; i++) {
+      await prisma.itemImage.update({
+        where: { id: imageIds[i] },
+        data: {
+          label: i === 0 ? 'front' : i === 1 ? 'back' : `image-${i + 1}`,
+          imageOrder: i
+        }
+      });
+    }
+  }
+  
+  // Fetch the item again with linked images
+  const itemWithImages = await prisma.item.findUnique({
+    where: { id: item.id },
+    include: { images: { orderBy: { imageOrder: 'asc' } } }
+  });
+  
+  res.status(201).json({ data: itemWithImages });
 });
 
 // List items with images
@@ -75,12 +113,14 @@ router.patch("/:id", async (req: AuthRequest, res) => {
   
   const allowedFields = [
     'title', 'content', 'material', 'size', 'diameter', 'color', 
-    'holes', 'style', 'nbsCode', 'buttonCondition', 'manufacturer', 'notes'
+    'holes', 'style', 'nbsCode', 'division', 'section', 'sectionName',
+    'age', 'backType', 'pictorialSubject', 'pattern', 'usageType',
+    'buttonCondition', 'manufacturer', 'notes'
   ];
   
   allowedFields.forEach(field => {
     if (req.body[field] !== undefined) {
-      updateData[field] = field === 'holes' && req.body[field] !== null 
+      updateData[field] = (field === 'holes' || field === 'section') && req.body[field] !== null 
         ? Number(req.body[field]) 
         : req.body[field];
     }

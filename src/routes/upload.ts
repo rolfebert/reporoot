@@ -53,16 +53,27 @@ async function processAndStoreImage(
     };
   }
 
-  const tempPath = path.join('uploads', `temp-${Date.now()}.jpg`);
+  // Create unique temp filename to avoid collisions during concurrent uploads
+  const tempPath = path.join('uploads', `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.jpg`);
   await fs.writeFile(tempPath, optimizedBuffer);
 
   let analysisData = null;
+  
   try {
+    // Perform analysis - this needs the file to exist on disk
     analysisData = await analyzeButtonImage(tempPath);
   } catch (error) {
     console.error('Image analysis failed:', error);
-  } finally {
-    await fs.unlink(tempPath).catch(() => {});
+  }
+  
+  // CRITICAL FIX: Delete temp file AFTER analysis completes
+  // Previously this was in a finally block which deleted the file
+  // before analysis could complete
+  try {
+    await fs.unlink(tempPath);
+  } catch (unlinkError) {
+    console.error('Failed to delete temp file:', unlinkError);
+    // Don't fail the whole operation if cleanup fails
   }
 
   const newImage = await prisma.itemImage.create({
@@ -73,7 +84,6 @@ async function processAndStoreImage(
       imageHash,
       originalFilename,
       analysisData: analysisData ? JSON.stringify(analysisData) : null,
-      itemId: 0,
     },
   });
 
@@ -129,9 +139,19 @@ router.post('/', authenticateJWT, upload.array('images', 50), async (req: AuthRe
       });
     }
 
+    // Return image IDs for frontend to use
+    const allImageIds = buttons.flatMap(b => b.images.map(img => img.id));
+    
+    // Return combined analysis data from all images
+    const combinedAnalysis = {};
+    buttons.forEach(btn => {
+      Object.assign(combinedAnalysis, btn.buttonInfo);
+    });
+    
     res.json({
       data: {
-        buttons,
+        imageIds: allImageIds,
+        analysisData: combinedAnalysis,
         count: buttons.length
       }
     });

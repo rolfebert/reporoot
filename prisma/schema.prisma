@@ -14,26 +14,29 @@ model User {
   createdAt      DateTime @default(now())
   refreshTokens  RefreshToken[]
   items          Item[]
+  
+  @@map("user")
 }
 
 model RefreshToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
-  user      User     @relation(fields:  [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   userId    Int
   expiresAt DateTime
   createdAt DateTime @default(now())
+  
   @@index([userId])
+  @@map("refreshtoken")
 }
 
 model Item {
   id          Int      @id @default(autoincrement())
   title       String
   content     String?    @db.Text
-  owner       User     @relation(fields:  [ownerId], references: [id])
+  owner       User     @relation(fields: [ownerId], references: [id])
   ownerId     Int
   images      ItemImage[]
-
   nbsCode          String? 
   division         String?
   section          Int?
@@ -53,16 +56,17 @@ model Item {
   buttonCondition  String?
   manufacturer     String?
   notes            String?  @db.Text
-
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
   @@index([ownerId])
+  @@map("item")
 }
 
 model ItemImage {
   id         Int      @id @default(autoincrement())
-  item       Item     @relation(fields:  [itemId], references: [id], onDelete: Cascade)
-  itemId     Int
+  item       Item?    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId     Int?     
   
   url        String? 
   
@@ -76,7 +80,8 @@ model ItemImage {
   label      String?
   imageOrder Int      @default(0)
   createdAt  DateTime @default(now())
-
+  
   @@index([itemId])
   @@index([imageHash])
+  @@map("itemimage")
 }

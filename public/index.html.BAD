@@ -232,7 +232,7 @@
     const API_URL = 'http://localhost:4000';
     let token = localStorage.getItem('token');
     let userEmail = localStorage.getItem('userEmail');
-    let uploadedImageIds = []; // Store image IDs instead of URLs
+    let uploadedImageIds = []; // Changed: store IDs instead of image objects
     let buttonsData = []; // For batch mode
 
     // Ensure analyzing message is hidden on page load
@@ -399,28 +399,63 @@
         }
 
         if (res.ok) {
-          const data = await res.json();
-          
-          // CRITICAL FIX: Store image IDs from upload response
-          if (data.data.imageIds && data.data.imageIds.length > 0) {
-            uploadedImageIds = data.data.imageIds;
-            
-            // Display preview using image IDs
-            const previewDiv = document.getElementById('imagePreview');
-            previewDiv.innerHTML = uploadedImageIds.map((imgId, idx) => `
-              <div class="image-preview-item">
-                <img src="${API_URL}/api/v1/images/${imgId}" alt="Preview ${idx + 1}">
-                <button class="remove" onclick="removeImage(${idx})" title="Remove">×</button>
-              </div>
-            `).join('');
-            
-            analyzeText.textContent = `✓ ${uploadedImageIds.length} image(s) uploaded successfully!`;
-            setTimeout(() => analyzingMsg.classList.add('hidden'), 3000);
-            showMsg(`✓ Images uploaded and analyzed!`, 'success');
-          } else {
-            throw new Error('No image IDs returned from upload');
-          }
-        } else {
+  const data = await res.json();
+  console.log('Upload response:', data); // DEBUG
+  
+  // CRITICAL: Get image IDs from upload response
+  if (data.data && data.data.imageIds) {
+    uploadedImageIds = data.data.imageIds;
+    
+    // Display preview using database image IDs
+    const previewDiv = document.getElementById('imagePreview');
+    previewDiv.innerHTML = uploadedImageIds.map((imgId, idx) => `
+      <div class="image-preview-item">
+        <img src="${API_URL}/api/v1/images/${imgId}" alt="Preview ${idx + 1}">
+        <button class="remove" onclick="removeImage(${idx})" title="Remove">×</button>
+      </div>
+    `).join('');
+    
+    // Auto-populate form if AI analysis data exists
+    if (data.data.analysisData) {
+      const info = data.data.analysisData;
+      
+      let titleParts = [];
+      if (info.age && !info.age.includes('Modern')) titleParts.push(info.age);
+      if (info.material) titleParts.push(info.material);
+      if (info.color) titleParts.push(info.color);
+      if (info.pictorialSubject) titleParts.push(info.pictorialSubject);
+      if (info.style) titleParts.push(info.style);
+      let titleValue = titleParts.join(' ') || 'Button';
+      document.getElementById('title').value = titleValue;
+
+      if (info.material) document.getElementById('material').value = info.material;
+      if (info.size) document.getElementById('size').value = info.size;
+      if (info.diameter) document.getElementById('diameter').value = info.diameter;
+      if (info.color) document.getElementById('color').value = info.color;
+      if (info.holes != null) document.getElementById('holes').value = info.holes;
+      if (info.style) document.getElementById('style').value = info.style;
+      if (info.nbsCode) document.getElementById('nbsCode').value = info.nbsCode;
+      if (info.division) document.getElementById('division').value = info.division;
+      if (info.section != null) document.getElementById('section').value = info.section;
+      if (info.sectionName) document.getElementById('sectionName').value = info.sectionName;
+      if (info.age) document.getElementById('age').value = info.age;
+      if (info.backType) document.getElementById('backType').value = info.backType;
+      if (info.pictorialSubject) document.getElementById('pictorialSubject').value = info.pictorialSubject;
+      if (info.pattern) document.getElementById('pattern').value = info.pattern;
+      if (info.usageType) document.getElementById('usageType').value = info.usageType;
+      if (info.buttonCondition) document.getElementById('buttonCondition').value = info.buttonCondition;
+      if (info.manufacturer) document.getElementById('manufacturer').value = info.manufacturer;
+      if (info.notes) document.getElementById('notes').value = info.notes;
+    }
+    
+    analyzeText.textContent = `✓ ${uploadedImageIds.length} image(s) uploaded!`;
+    setTimeout(() => analyzingMsg.classList.add('hidden'), 3000);
+    showMsg(`✓ Images uploaded successfully!`, 'success');
+  } else {
+    throw new Error('Invalid response - no imageIds returned');
+  }
+
+  } else {
           const errorData = await res.json();
           console.error('Upload failed:', errorData);
           analyzingMsg.classList.add('hidden');
@@ -521,18 +556,17 @@
       }
     }
 
-   function clearForm() {
-  const fields = ['title', 'content', 'material', 'size', 'diameter', 'color', 'holes', 'style', 'nbsCode', 'division', 'section', 'sectionName', 'age', 'backType', 'pictorialSubject', 'pattern', 'usageType', 'buttonCondition', 'manufacturer', 'notes'];
-  fields.forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('imageFiles').value = '';
-  document.getElementById('imagePreview').innerHTML = '';
-  document.getElementById('analyzingMsg').classList.add('hidden');
-  document.getElementById('createBtn').textContent = 'Create Button Entry';
-  uploadedImageIds = [];
-  buttonsData = [];
-}
+    function clearForm() {
+      ['title', 'content', 'material', 'size', 'diameter', 'color', 'holes', 'style', 'nbsCode', 'division', 'section', 'sectionName', 'age', 'backType', 'pictorialSubject', 'pattern', 'usageType', 'buttonCondition', 'manufacturer', 'notes'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('imageFiles').value = '';
+      document.getElementById('imagePreview').innerHTML = '';
+      document.getElementById('analyzingMsg').classList.add('hidden');
+      document.getElementById('createBtn').textContent = 'Create Button Entry';
+      uploadedImageIds = [];
+      buttonsData = [];
+    }
 
     async function loadItems() {
       try {
@@ -598,58 +632,6 @@
     let allItemsCache = null;
 
     async function getAllItems() {
-      if (allItemsCache) return allItemsCache;}
+      if (allItemsCache) return allItemsCache;
       
-     try {
-      
-      if (res.status === 401) {
-        handleTokenExpiration();
-        return [];
-      }
-      
-      const data = await res.json();
-      if (res.ok) {
-        allItemsCache = data.data;
-        return data.data;
-      }
-      return [];
-    }
-
-    async function deleteItem(id) {
-      if (!confirm('Delete this button entry?')) return;
-      
-      showLoading('Deleting...');
-      try {
-        const res = await fetch(API_URL + '/api/v1/items/' + id, {
-          method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        
-        hideLoading();
-        
-        if (res.status === 401) {
-          handleTokenExpiration();
-          return;
-        }
-        
-        if (res.ok) {
-          showMsg('✓ Button deleted', 'success');
-          loadItems();
-        } else {
-          showMsg('Failed to delete', 'error');
-        }
-      } catch (err) {
-        hideLoading();
-        showMsg('Network error: ' + err.message, 'error');
-      }
-    }
-
-    function showMsg(msg, type) {
-      const el = document.getElementById('message');
-      el.textContent = msg;
-      el.className = type;
-      setTimeout(() => { el.textContent = ''; el.className = ''; }, 5000);
-    }
-  </script>
-</body>
-</html>
+      const res = await fetch(API_URL + '/api/v1/items
